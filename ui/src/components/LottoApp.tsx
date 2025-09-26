@@ -5,26 +5,15 @@ import { CONTRACT_ABI, CONTRACT_ADDRESS } from '../config/contracts';
 import { useAccount, usePublicClient } from 'wagmi';
 import { createPublicClient, http, Hex } from 'viem';
 import { sepolia } from 'viem/chains';
-import { BrowserProvider, Contract, Eip1193Provider } from 'ethers';
-import { Fhevm } from '@zama-fhe/relayer-sdk';
-
-function useEthersSigner(): Contract['runner'] | null {
-  const [signer, setSigner] = useState<Contract['runner'] | null>(null);
-  useEffect(() => {
-    (async () => {
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        const provider = new BrowserProvider((window as any).ethereum as Eip1193Provider);
-        setSigner(await provider.getSigner());
-      }
-    })();
-  }, []);
-  return signer;
-}
+import { Contract } from 'ethers';
+import { useEthersSigner } from '../hooks/useEthersSigner';
+import { useZamaInstance } from '../hooks/useZamaInstance';
 
 export function LottoApp() {
   const { address, isConnected } = useAccount();
   const viemClient = usePublicClient();
-  const signer = useEthersSigner();
+  const signerPromise = useEthersSigner();
+  const { instance: zama, isLoading: zamaLoading, error: zamaError } = useZamaInstance();
 
   const [roundId, setRoundId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -71,12 +60,9 @@ export function LottoApp() {
   }, []);
 
   async function buyTicket() {
-    if (!isConnected || !signer) return;
+    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError) return;
     setTxStatus('Encrypting...');
-    const fhe = new Fhevm({ network: 'sepolia' });
-    // Using Zama testnet relayer defaults from docs
-    await fhe.init({ relayerUrl: 'https://relayer.testnet.zama.cloud' });
-    const buffer = fhe.createEncryptedInput(CONTRACT_ADDRESS, address!);
+    const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
     buffer.add8(BigInt(digits[0]));
     buffer.add8(BigInt(digits[1]));
     buffer.add8(BigInt(digits[2]));
@@ -84,6 +70,7 @@ export function LottoApp() {
     const { handles, inputProof } = await buffer.encrypt();
 
     setTxStatus('Submitting transaction...');
+    const signer = await signerPromise!;
     const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
     const tx = await c.buyTicket(handles[0] as Hex, handles[1] as Hex, handles[2] as Hex, handles[3] as Hex, inputProof as Hex, {
       value: price,
@@ -94,8 +81,9 @@ export function LottoApp() {
   }
 
   async function adminDraw() {
-    if (!isConnected || !signer) return;
+    if (!isConnected || !signerPromise) return;
     setTxStatus('Closing round and drawing...');
+    const signer = await signerPromise!;
     const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
     const tx = await c.closeAndDraw(drawDigits[0], drawDigits[1], drawDigits[2], drawDigits[3]);
     await tx.wait();
@@ -198,4 +186,3 @@ export function LottoApp() {
     </div>
   );
 }
-
