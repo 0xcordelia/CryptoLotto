@@ -150,124 +150,522 @@ export function LottoApp() {
   }
 
   return (
-    <div>
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div>
-            <div style={{ fontSize: 14, color: '#555' }}>Contract</div>
-            <div style={{ fontFamily: 'monospace' }}>{CONTRACT_ADDRESS}</div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%)' }}>
+      {/* Header */}
+      <header style={{
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(10px)',
+        borderBottom: '1px solid var(--gray-200)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'var(--space-4) var(--space-6)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                background: 'var(--gradient-lottery)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.5rem',
+                fontWeight: '800',
+                color: 'white',
+                boxShadow: 'var(--shadow-lg)'
+              }}>
+                🎲
+              </div>
+              <div>
+                <h1 className="gradient-text" style={{
+                  margin: 0,
+                  fontSize: '1.875rem',
+                  fontWeight: '800',
+                  letterSpacing: '-0.025em'
+                }}>
+                  CryptoLotto
+                </h1>
+                <p style={{
+                  margin: 0,
+                  fontSize: '0.875rem',
+                  color: 'var(--gray-600)',
+                  fontWeight: '500'
+                }}>
+                  Decentralized Lottery on Blockchain
+                </p>
+              </div>
+            </div>
+            <ConnectButton />
           </div>
-          <ConnectButton />
         </div>
+      </header>
 
-        <div style={{ background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8, marginBottom: 16 }}>
-          <div style={{ display: 'flex', gap: 24 }}>
-            <div>
-              <div>Round</div>
-              <strong>#{roundId ?? '-'}</strong>
+      {/* Main Content */}
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'var(--space-8) var(--space-6)' }}>
+        {/* Hero Section with Current Round Info */}
+        <section className="card sparkle" style={{
+          padding: 'var(--space-8)',
+          marginBottom: 'var(--space-8)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
+            <h2 style={{
+              fontSize: '2.25rem',
+              fontWeight: '800',
+              margin: '0 0 var(--space-2) 0',
+              color: 'var(--gray-900)'
+            }}>
+              Current Round
+            </h2>
+            <p style={{
+              fontSize: '1.125rem',
+              color: 'var(--gray-600)',
+              margin: 0
+            }}>
+              Your chance to win big starts here
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: 'var(--space-6)',
+            textAlign: 'center'
+          }}>
+            <div style={{
+              padding: 'var(--space-6)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: 'var(--radius-xl)',
+              border: '2px solid rgba(239, 68, 68, 0.2)'
+            }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--gray-600)', marginBottom: 'var(--space-2)' }}>
+                Round Number
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--primary-600)' }}>
+                #{roundId ?? '-'}
+              </div>
             </div>
-            <div>
-              <div>Status</div>
-              <strong>{isOpen ? 'Open' : 'Closed'}</strong>
+
+            <div style={{
+              padding: 'var(--space-6)',
+              background: isOpen ? 'rgba(16, 185, 129, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+              borderRadius: 'var(--radius-xl)',
+              border: `2px solid ${isOpen ? 'rgba(16, 185, 129, 0.2)' : 'rgba(107, 114, 128, 0.2)'}`
+            }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--gray-600)', marginBottom: 'var(--space-2)' }}>
+                Status
+              </div>
+              <div style={{
+                fontSize: '1.5rem',
+                fontWeight: '800',
+                color: isOpen ? 'var(--success)' : 'var(--gray-500)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 'var(--space-2)'
+              }}>
+                <span>{isOpen ? '🟢' : '🔴'}</span>
+                {isOpen ? 'Open' : 'Closed'}
+              </div>
             </div>
-            <div>
-              <div>Ticket Price</div>
-              <strong>{priceWei !== null ? `${formatEther(priceWei)} ETH` : '-'}</strong>
+
+            <div style={{
+              padding: 'var(--space-6)',
+              background: 'rgba(245, 158, 11, 0.1)',
+              borderRadius: 'var(--radius-xl)',
+              border: '2px solid rgba(245, 158, 11, 0.2)'
+            }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--gray-600)', marginBottom: 'var(--space-2)' }}>
+                Ticket Price
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--accent-600)' }}>
+                {priceWei !== null ? `${formatEther(priceWei)} ETH` : '-'}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <div style={{ background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-            <h3 style={{ marginTop: 0 }}>Buy Ticket</h3>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+          {/* Contract Address */}
+          <div style={{
+            marginTop: 'var(--space-6)',
+            textAlign: 'center',
+            padding: 'var(--space-4)',
+            background: 'rgba(15, 23, 42, 0.05)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--gray-200)'
+          }}>
+            <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--gray-500)', marginBottom: 'var(--space-1)' }}>
+              Smart Contract
+            </div>
+            <code style={{
+              fontSize: '0.875rem',
+              fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+              color: 'var(--gray-700)',
+              wordBreak: 'break-all'
+            }}>
+              {CONTRACT_ADDRESS}
+            </code>
+          </div>
+        </section>
+
+        {/* Game Actions */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))',
+          gap: 'var(--space-8)',
+          marginBottom: 'var(--space-8)'
+        }}>
+          {/* Buy Ticket */}
+          <section className="card" style={{ padding: 'var(--space-8)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+              <div style={{ fontSize: '2rem' }}>🎫</div>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: 'var(--gray-900)'
+              }}>
+                Buy Your Lucky Ticket
+              </h3>
+            </div>
+
+            <p style={{
+              color: 'var(--gray-600)',
+              marginBottom: 'var(--space-6)',
+              fontSize: '0.875rem'
+            }}>
+              Choose your lucky numbers (1-9 for each digit)
+            </p>
+
+            <div style={{
+              display: 'flex',
+              gap: 'var(--space-3)',
+              marginBottom: 'var(--space-6)',
+              justifyContent: 'center'
+            }}>
               {digits.map((v, i) => (
-                <input
-                  key={i}
-                  type="number"
-                  min={1}
-                  max={9}
-                  value={v}
-                  onChange={(e) => {
-                    const next = [...digits];
-                    const nv = Math.max(1, Math.min(9, Number(e.target.value || 1)));
-                    next[i] = nv;
-                    setDigits(next);
-                  }}
-                  style={{ width: 60, padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
-                />
+                <div key={i} className="lottery-ball" style={{
+                  animation: `float 3s ease-in-out infinite ${i * 0.2}s`,
+                  position: 'relative'
+                }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={9}
+                    value={v}
+                    onChange={(e) => {
+                      const next = [...digits];
+                      const nv = Math.max(1, Math.min(9, Number(e.target.value || 1)));
+                      next[i] = nv;
+                      setDigits(next);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.25rem',
+                      fontWeight: '800',
+                      textAlign: 'center',
+                      borderRadius: '50%'
+                    }}
+                  />
+                </div>
               ))}
             </div>
-            <button onClick={buyTicket} disabled={!isConnected || !isOpen || priceWei === null} style={{ padding: '8px 12px' }}>
-              Buy ({priceWei !== null ? `${formatEther(priceWei)} ETH` : '...'} )
-            </button>
-          </div>
 
-          <div style={{ background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-            <h3 style={{ marginTop: 0 }}>Admin Draw</h3>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button
+              className={`btn btn-primary ${!isConnected || !isOpen || priceWei === null ? '' : 'sparkle'}`}
+              onClick={buyTicket}
+              disabled={!isConnected || !isOpen || priceWei === null}
+              style={{
+                width: '100%',
+                padding: 'var(--space-4) var(--space-6)',
+                fontSize: '1rem',
+                fontWeight: '700'
+              }}
+            >
+              🎲 Buy Ticket ({priceWei !== null ? `${formatEther(priceWei)} ETH` : '...'})
+            </button>
+          </section>
+
+          {/* Admin Draw */}
+          <section className="card" style={{ padding: 'var(--space-8)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+              <div style={{ fontSize: '2rem' }}>⚡</div>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: 'var(--gray-900)'
+              }}>
+                Admin Draw
+              </h3>
+            </div>
+
+            <p style={{
+              color: 'var(--gray-600)',
+              marginBottom: 'var(--space-6)',
+              fontSize: '0.875rem'
+            }}>
+              Set winning numbers and close the round
+            </p>
+
+            <div style={{
+              display: 'flex',
+              gap: 'var(--space-3)',
+              marginBottom: 'var(--space-6)',
+              justifyContent: 'center'
+            }}>
               {drawDigits.map((v, i) => (
-                <input
-                  key={i}
-                  type="number"
-                  min={0}
-                  max={9}
-                  value={v}
-                  onChange={(e) => {
-                    const next = [...drawDigits];
-                    const nv = Math.max(0, Math.min(9, Number(e.target.value || 0)));
-                    next[i] = nv;
-                    setDrawDigits(next);
-                  }}
-                  style={{ width: 60, padding: 8, border: '1px solid #ddd', borderRadius: 4 }}
-                />
+                <div key={i} style={{
+                  width: '60px',
+                  height: '60px',
+                  borderRadius: '50%',
+                  background: 'var(--gradient-secondary)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '800',
+                  fontSize: '1.25rem',
+                  boxShadow: 'var(--shadow-lg)',
+                  position: 'relative'
+                }}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={9}
+                    value={v}
+                    onChange={(e) => {
+                      const next = [...drawDigits];
+                      const nv = Math.max(0, Math.min(9, Number(e.target.value || 0)));
+                      next[i] = nv;
+                      setDrawDigits(next);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '1.25rem',
+                      fontWeight: '800',
+                      textAlign: 'center',
+                      borderRadius: '50%'
+                    }}
+                  />
+                </div>
               ))}
             </div>
-            <button onClick={adminDraw} disabled={!isConnected || isOpen} style={{ padding: '8px 12px' }}>
-              Close & Draw
+
+            <button
+              className="btn btn-secondary"
+              onClick={adminDraw}
+              disabled={!isConnected || isOpen}
+              style={{
+                width: '100%',
+                padding: 'var(--space-4) var(--space-6)',
+                fontSize: '1rem',
+                fontWeight: '700'
+              }}
+            >
+              ⚡ Close & Draw
             </button>
-          </div>
+          </section>
         </div>
 
+        {/* Transaction Status */}
         {txStatus && (
-          <div style={{ marginTop: 16, color: '#333' }}>
-            <em>{txStatus}</em>
+          <div className="card" style={{
+            padding: 'var(--space-4) var(--space-6)',
+            marginBottom: 'var(--space-8)',
+            background: 'linear-gradient(135deg, var(--secondary-50) 0%, var(--primary-50) 100%)',
+            border: '2px solid var(--secondary-200)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div style={{ fontSize: '1.5rem' }}>ℹ️</div>
+              <div style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: 'var(--gray-700)'
+              }}>
+                {txStatus}
+              </div>
+            </div>
           </div>
         )}
 
-        <div style={{ marginTop: 24, background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>Recent Winners</h3>
-          <p>Use a block explorer or subscribe to PrizeAwarded events to display winners.</p>
-        </div>
+        {/* Recent Winners */}
+        <section className="card" style={{ padding: 'var(--space-8)', marginBottom: 'var(--space-8)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+            <div style={{ fontSize: '2rem' }}>🏆</div>
+            <h3 style={{
+              margin: 0,
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: 'var(--gray-900)'
+            }}>
+              Recent Winners
+            </h3>
+          </div>
+          <div style={{
+            padding: 'var(--space-6)',
+            background: 'var(--gray-50)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px dashed var(--gray-300)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>🔍</div>
+            <p style={{
+              color: 'var(--gray-600)',
+              margin: 0,
+              fontSize: '0.875rem'
+            }}>
+              Use a block explorer or subscribe to PrizeAwarded events to display winners.
+            </p>
+          </div>
+        </section>
 
-        <div style={{ marginTop: 24, background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
-          <h3 style={{ marginTop: 0 }}>My Tickets</h3>
+        {/* My Tickets */}
+        <section className="card" style={{ padding: 'var(--space-8)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+            <div style={{ fontSize: '2rem' }}>🎟️</div>
+            <h3 style={{
+              margin: 0,
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: 'var(--gray-900)'
+            }}>
+              My Tickets
+            </h3>
+          </div>
+
           {myTickets.length === 0 ? (
-            <p>No tickets yet.</p>
+            <div style={{
+              padding: 'var(--space-8)',
+              background: 'var(--gray-50)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px dashed var(--gray-300)',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>🎫</div>
+              <p style={{
+                color: 'var(--gray-600)',
+                margin: 0,
+                fontSize: '1rem',
+                fontWeight: '500'
+              }}>
+                No tickets yet. Buy your first ticket to get started!
+              </p>
+            </div>
           ) : (
-            myTickets.map((t) => (
-              <div key={`${t.round}-${t.index}`} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <div style={{ width: 90 }}>Round #{t.round}</div>
-                <div style={{ width: 80 }}>Index {t.index}</div>
-                <code style={{ fontSize: 12, color: '#999' }}>{(t.d1 as any).toString().slice(0, 10)}...</code>
-                <code style={{ fontSize: 12, color: '#999' }}>{(t.d2 as any).toString().slice(0, 10)}...</code>
-                <code style={{ fontSize: 12, color: '#999' }}>{(t.d3 as any).toString().slice(0, 10)}...</code>
-                <code style={{ fontSize: 12, color: '#999' }}>{(t.d4 as any).toString().slice(0, 10)}...</code>
-                {t.clear ? (
-                  <strong style={{ marginLeft: 'auto' }}>
-                    {t.clear[0]} {t.clear[1]} {t.clear[2]} {t.clear[3]}
-                  </strong>
-                ) : (
-                  <button onClick={() => decryptTicket(t)} disabled={t.loading} style={{ marginLeft: 'auto' }}>
-                    {t.loading ? 'Decrypting...' : 'Decrypt'}
-                  </button>
-                )}
-                {t.error && <span style={{ color: 'red' }}>{t.error}</span>}
-              </div>
-            ))
+            <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+              {myTickets.map((t) => (
+                <div
+                  key={`${t.round}-${t.index}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-4)',
+                    padding: 'var(--space-4)',
+                    background: 'var(--gray-50)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--gray-200)'
+                  }}
+                >
+                  <div style={{
+                    minWidth: '120px',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    color: 'var(--gray-700)'
+                  }}>
+                    Round #{t.round}
+                  </div>
+                  <div style={{
+                    minWidth: '100px',
+                    fontSize: '0.875rem',
+                    color: 'var(--gray-600)'
+                  }}>
+                    Index {t.index}
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1 }}>
+                    {[t.d1, t.d2, t.d3, t.d4].map((d, i) => (
+                      <code
+                        key={i}
+                        style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--gray-500)',
+                          background: 'var(--gray-100)',
+                          padding: 'var(--space-1) var(--space-2)',
+                          borderRadius: 'var(--radius-sm)'
+                        }}
+                      >
+                        {(d as any).toString().slice(0, 8)}...
+                      </code>
+                    ))}
+                  </div>
+                  {t.clear ? (
+                    <div style={{
+                      display: 'flex',
+                      gap: 'var(--space-2)',
+                      marginLeft: 'auto'
+                    }}>
+                      {t.clear.map((num, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'var(--gradient-accent)',
+                            color: 'var(--gray-800)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: '800',
+                            fontSize: '0.875rem',
+                            boxShadow: 'var(--shadow-md)'
+                          }}
+                        >
+                          {num}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <button
+                      className="btn btn-accent"
+                      onClick={() => decryptTicket(t)}
+                      disabled={t.loading}
+                      style={{ marginLeft: 'auto' }}
+                    >
+                      {t.loading ? '🔄 Decrypting...' : '🔓 Decrypt'}
+                    </button>
+                  )}
+                  {t.error && (
+                    <div style={{
+                      color: 'var(--error)',
+                      fontSize: '0.75rem',
+                      fontWeight: '500'
+                    }}>
+                      {t.error}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
