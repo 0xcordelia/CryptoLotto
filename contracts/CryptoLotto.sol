@@ -246,6 +246,44 @@ contract CryptoLotto is SepoliaConfig {
         emit RoundOpened(currentRoundId);
     }
 
+    /// @notice Returns encrypted tickets (digits) for a given user in a round
+    /// @dev Does not use msg.sender; caller must specify the user address
+    function getUserTickets(uint256 roundId, address user)
+        external
+        view
+        returns (
+            bytes32[] memory d1,
+            bytes32[] memory d2,
+            bytes32[] memory d3,
+            bytes32[] memory d4,
+            uint256[] memory indices
+        )
+    {
+        RoundInfo storage r = rounds[roundId];
+        uint256 n = r.tickets.length;
+        uint256 count = 0;
+        for (uint256 i = 0; i < n; i++) {
+            if (r.tickets[i].player == user) count++;
+        }
+        d1 = new bytes32[](count);
+        d2 = new bytes32[](count);
+        d3 = new bytes32[](count);
+        d4 = new bytes32[](count);
+        indices = new uint256[](count);
+        uint256 j = 0;
+        for (uint256 i = 0; i < n; i++) {
+            Ticket storage t = r.tickets[i];
+            if (t.player == user) {
+                d1[j] = FHE.toBytes32(t.d1);
+                d2[j] = FHE.toBytes32(t.d2);
+                d3[j] = FHE.toBytes32(t.d3);
+                d4[j] = FHE.toBytes32(t.d4);
+                indices[j] = i;
+                j++;
+            }
+        }
+    }
+
     /// @notice Test helper to compute and store a match count handle for decryption in mock env
     function testComputeMatchCount(
         uint256 roundId,
