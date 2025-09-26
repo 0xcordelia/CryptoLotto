@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Header } from './Header';
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from '../config/contracts';
 import { useAccount, usePublicClient } from 'wagmi';
 import { createPublicClient, http } from 'viem';
@@ -93,7 +92,6 @@ export function LottoApp() {
 
   return (
     <div>
-      <Header />
       <div style={{ maxWidth: 960, margin: '0 auto', padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
