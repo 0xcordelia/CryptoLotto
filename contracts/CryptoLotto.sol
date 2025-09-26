@@ -65,6 +65,7 @@ contract CryptoLotto is SepoliaConfig {
 
     /// @notice Fund the contract to ensure jackpot liquidity
     receive() external payable {}
+
     fallback() external payable {}
 
     /// @notice Returns whether current round is open to accept tickets
@@ -112,6 +113,10 @@ contract CryptoLotto is SepoliaConfig {
 
         // Optional: Range hint using ACL/allow; cannot branch on encrypted values.
         // We simply store as provided by relayer, trusting client-side range enforcement.
+        FHE.allow(da, msg.sender);
+        FHE.allow(db, msg.sender);
+        FHE.allow(dc, msg.sender);
+        FHE.allow(dd, msg.sender);
 
         r.tickets.push(Ticket({d1: da, d2: db, d3: dc, d4: dd, player: msg.sender}));
         emit TicketPurchased(currentRoundId, msg.sender, r.tickets.length - 1);
@@ -151,14 +156,8 @@ contract CryptoLotto is SepoliaConfig {
         for (uint256 i = 0; i < n; i++) {
             Ticket storage t = r.tickets[i];
             euint8 total = FHE.add(
-                FHE.add(
-                    FHE.select(FHE.eq(t.d1, W1), one, zero),
-                    FHE.select(FHE.eq(t.d2, W2), one, zero)
-                ),
-                FHE.add(
-                    FHE.select(FHE.eq(t.d3, W3), one, zero),
-                    FHE.select(FHE.eq(t.d4, W4), one, zero)
-                )
+                FHE.add(FHE.select(FHE.eq(t.d1, W1), one, zero), FHE.select(FHE.eq(t.d2, W2), one, zero)),
+                FHE.add(FHE.select(FHE.eq(t.d3, W3), one, zero), FHE.select(FHE.eq(t.d4, W4), one, zero))
             );
 
             handles[i] = FHE.toBytes32(total);
@@ -213,10 +212,14 @@ contract CryptoLotto is SepoliaConfig {
 
     /// @notice Utility returning an encrypted handle of match-count for a ticket index and provided winning digits
     /// @dev Useful for testing and user decryption flows. Returns euint8 handle (ciphertext).
-    function matchCountHandle(uint256 roundId, uint256 ticketIndex, uint8 w1, uint8 w2, uint8 w3, uint8 w4)
-        external
-        returns (bytes32)
-    {
+    function matchCountHandle(
+        uint256 roundId,
+        uint256 ticketIndex,
+        uint8 w1,
+        uint8 w2,
+        uint8 w3,
+        uint8 w4
+    ) external returns (bytes32) {
         require(ticketIndex < rounds[roundId].tickets.length, "Bad index");
         Ticket storage t = rounds[roundId].tickets[ticketIndex];
 
@@ -248,7 +251,10 @@ contract CryptoLotto is SepoliaConfig {
 
     /// @notice Returns encrypted tickets (digits) for a given user in a round
     /// @dev Does not use msg.sender; caller must specify the user address
-    function getUserTickets(uint256 roundId, address user)
+    function getUserTickets(
+        uint256 roundId,
+        address user
+    )
         external
         view
         returns (
