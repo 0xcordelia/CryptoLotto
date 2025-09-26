@@ -17,7 +17,7 @@ export function LottoApp() {
   const [roundId, setRoundId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [priceWei, setPriceWei] = useState<bigint | null>(null);
-  const [digits, setDigits] = useState([0, 0, 0, 0]);
+  const [digits, setDigits] = useState([1, 1, 1, 1]);
   const [drawDigits, setDrawDigits] = useState([0, 0, 0, 0]);
   const [txStatus, setTxStatus] = useState<string>('');
   const [myTickets, setMyTickets] = useState<Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string; clear?: [number, number, number, number] | null; loading?: boolean; error?: string | null }>>([]);
@@ -80,6 +80,10 @@ export function LottoApp() {
 
   async function buyTicket() {
     if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || priceWei === null) return;
+    if (digits.some((d) => d === 0)) {
+      setTxStatus('Each ticket digit must be 1-9 (no zero).');
+      return;
+    }
     setTxStatus('Encrypting...');
     const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
     buffer.add8(BigInt(digits[0]));
@@ -181,12 +185,12 @@ export function LottoApp() {
                 <input
                   key={i}
                   type="number"
-                  min={0}
+                  min={1}
                   max={9}
                   value={v}
                   onChange={(e) => {
                     const next = [...digits];
-                    const nv = Math.max(0, Math.min(9, Number(e.target.value || 0)));
+                    const nv = Math.max(1, Math.min(9, Number(e.target.value || 1)));
                     next[i] = nv;
                     setDigits(next);
                   }}
