@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from '../config/contracts';
 import { useAccount, usePublicClient } from 'wagmi';
@@ -17,6 +17,7 @@ export function LottoApp() {
   const [roundId, setRoundId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [priceWei, setPriceWei] = useState<bigint | null>(null);
+  const [ownerAddr, setOwnerAddr] = useState<string | null>(null);
   const [digits, setDigits] = useState([1, 1, 1, 1]);
   const [drawDigits, setDrawDigits] = useState([0, 0, 0, 0]);
   const [txStatus, setTxStatus] = useState<string>('');
@@ -30,26 +31,36 @@ export function LottoApp() {
 
   async function refresh() {
     try {
-      const [rid, open, p] = await Promise.all([
+      const [rid, open, p, own] = await Promise.all([
         publicClient.readContract({
           abi: CONTRACT_ABI as any,
           address: CONTRACT_ADDRESS as `0x${string}`,
           functionName: 'getCurrentRoundId',
+          args: [],
         }),
         publicClient.readContract({
           abi: CONTRACT_ABI as any,
           address: CONTRACT_ADDRESS as `0x${string}`,
           functionName: 'isOpen',
+          args: [],
         }),
         publicClient.readContract({
           abi: CONTRACT_ABI as any,
           address: CONTRACT_ADDRESS as `0x${string}`,
           functionName: 'TICKET_PRICE',
+          args: [],
+        }),
+        publicClient.readContract({
+          abi: CONTRACT_ABI as any,
+          address: CONTRACT_ADDRESS as `0x${string}`,
+          functionName: 'owner',
+          args: [],
         }),
       ]);
       setRoundId(Number(rid));
       setIsOpen(Boolean(open));
       setPriceWei(p as bigint);
+      setOwnerAddr((own as string) ?? null);
       if (address) {
         // Fetch user's tickets across all rounds [1..rid]
         const all: Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string }> = [];
@@ -471,7 +482,12 @@ export function LottoApp() {
             <button
               className="btn btn-secondary"
               onClick={adminDraw}
-              disabled={!isConnected || isOpen}
+              disabled={
+                !isConnected ||
+                !isOpen ||
+                !address ||
+                (ownerAddr !== null && ownerAddr.toLowerCase() !== (address as string).toLowerCase())
+              }
               style={{
                 width: '100%',
                 padding: 'var(--space-4) var(--space-6)',
@@ -481,6 +497,11 @@ export function LottoApp() {
             >
               ⚡ Close & Draw
             </button>
+            {isConnected && isOpen && ownerAddr && address && ownerAddr.toLowerCase() !== address.toLowerCase() && (
+              <div style={{ marginTop: 'var(--space-3)', color: 'var(--error)', fontSize: '0.8125rem' }}>
+                Only the contract owner can close the round.
+              </div>
+            )}
           </section>
         </div>
 
