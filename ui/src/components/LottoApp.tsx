@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from '../config/contracts';
 import { useAccount, usePublicClient } from 'wagmi';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, formatEther } from 'viem';
 import { sepolia } from 'viem/chains';
 import { Contract } from 'ethers';
 import { useEthersSigner } from '../hooks/useEthersSigner';
@@ -16,10 +16,11 @@ export function LottoApp() {
 
   const [roundId, setRoundId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [price, setPrice] = useState<string>('');
+  const [priceWei, setPriceWei] = useState<bigint | null>(null);
   const [digits, setDigits] = useState([0, 0, 0, 0]);
   const [drawDigits, setDrawDigits] = useState([0, 0, 0, 0]);
   const [txStatus, setTxStatus] = useState<string>('');
+  const [myTickets, setMyTickets] = useState<Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string; clear?: [number, number, number, number] | null; loading?: boolean; error?: string | null }>>([]);
 
   const publicClient = useMemo(() => {
     // Ensure no localhost usage; use Sepolia RPC from the injected wagmi client
@@ -48,7 +49,26 @@ export function LottoApp() {
       ]);
       setRoundId(Number(rid));
       setIsOpen(Boolean(open));
-      setPrice((BigInt(p as any)).toString());
+      setPriceWei(p as bigint);
+      if (address) {
+        // Fetch user's tickets across all rounds [1..rid]
+        const all: Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string }> = [];
+        for (let r = 1; r <= Number(rid); r++) {
+          const res = await publicClient.readContract({
+            abi: CONTRACT_ABI as any,
+            address: CONTRACT_ADDRESS as `0x${string}`,
+            functionName: 'getUserTickets',
+            args: [BigInt(r), address as `0x${string}`],
+          });
+          const [a, b, c, d, idxs] = res as any[];
+          for (let i = 0; i < (a?.length || 0); i++) {
+            all.push({ round: r, index: Number(idxs[i]), d1: a[i], d2: b[i], d3: c[i], d4: d[i] });
+          }
+        }
+        setMyTickets(all);
+      } else {
+        setMyTickets([]);
+      }
     } catch (e) {
       // noop
     }
@@ -59,7 +79,7 @@ export function LottoApp() {
   }, []);
 
   async function buyTicket() {
-    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError) return;
+    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || priceWei === null) return;
     setTxStatus('Encrypting...');
     const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
     buffer.add8(BigInt(digits[0]));
@@ -71,12 +91,47 @@ export function LottoApp() {
     setTxStatus('Submitting transaction...');
     const signer = await signerPromise!;
     const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
-    const tx = await c.buyTicket(handles[0], handles[1], handles[2] , handles[3] , inputProof, {
-      value: price,
-    });
+    const tx = await c.buyTicket(
+      handles[0],
+      handles[1],
+      handles[2],
+      handles[3],
+      inputProof,
+      { value: priceWei }
+    );
     await tx.wait();
     setTxStatus('Ticket purchased.');
     await refresh();
+  }
+
+  async function decryptTicket(ti: { round: number; index: number; d1: string; d2: string; d3: string; d4: string }) {
+    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || !address) return;
+    const signer = await signerPromise!;
+    const start = Math.floor(Date.now() / 1000).toString();
+    const durationDays = '7';
+    try {
+      setMyTickets((prev) => prev.map((t) => (t.round === ti.round && t.index === ti.index ? { ...t, loading: true, error: null } : t)));
+
+      const keypair = zama.generateKeypair();
+      const eip712 = zama.createEIP712(keypair.publicKey, [CONTRACT_ADDRESS], start, durationDays);
+      const signature = await signer.signTypedData(
+        eip712.domain,
+        { UserDecryptRequestVerification: (eip712 as any).types.UserDecryptRequestVerification },
+        eip712.message,
+      );
+
+      const pairs = [
+        { handle: ti.d1, contractAddress: CONTRACT_ADDRESS },
+        { handle: ti.d2, contractAddress: CONTRACT_ADDRESS },
+        { handle: ti.d3, contractAddress: CONTRACT_ADDRESS },
+        { handle: ti.d4, contractAddress: CONTRACT_ADDRESS },
+      ];
+      const out = await zama.userDecrypt(pairs, keypair.privateKey, keypair.publicKey, signature, [CONTRACT_ADDRESS], address, start, durationDays);
+      const values = [ti.d1, ti.d2, ti.d3, ti.d4].map((h) => Number((out as any)[h] ?? 0));
+      setMyTickets((prev) => prev.map((t) => (t.round === ti.round && t.index === ti.index ? { ...t, clear: values as any, loading: false } : t)));
+    } catch (err: any) {
+      setMyTickets((prev) => prev.map((t) => (t.round === ti.round && t.index === ti.index ? { ...t, loading: false, error: err?.message || 'Decrypt failed' } : t)));
+    }
   }
 
   async function adminDraw() {
@@ -113,7 +168,7 @@ export function LottoApp() {
             </div>
             <div>
               <div>Ticket Price</div>
-              <strong>{price ? `${price} wei` : '-'}</strong>
+              <strong>{priceWei !== null ? `${formatEther(priceWei)} ETH` : '-'}</strong>
             </div>
           </div>
         </div>
@@ -139,8 +194,8 @@ export function LottoApp() {
                 />
               ))}
             </div>
-            <button onClick={buyTicket} disabled={!isConnected || !isOpen} style={{ padding: '8px 12px' }}>
-              Buy ({price ? `${price} wei` : '...'} )
+            <button onClick={buyTicket} disabled={!isConnected || !isOpen || priceWei === null} style={{ padding: '8px 12px' }}>
+              Buy ({priceWei !== null ? `${formatEther(priceWei)} ETH` : '...'} )
             </button>
           </div>
 
@@ -179,6 +234,34 @@ export function LottoApp() {
         <div style={{ marginTop: 24, background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
           <h3 style={{ marginTop: 0 }}>Recent Winners</h3>
           <p>Use a block explorer or subscribe to PrizeAwarded events to display winners.</p>
+        </div>
+
+        <div style={{ marginTop: 24, background: 'white', padding: 16, border: '1px solid #eee', borderRadius: 8 }}>
+          <h3 style={{ marginTop: 0 }}>My Tickets</h3>
+          {myTickets.length === 0 ? (
+            <p>No tickets yet.</p>
+          ) : (
+            myTickets.map((t) => (
+              <div key={`${t.round}-${t.index}`} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <div style={{ width: 90 }}>Round #{t.round}</div>
+                <div style={{ width: 80 }}>Index {t.index}</div>
+                <code style={{ fontSize: 12, color: '#999' }}>{(t.d1 as any).toString().slice(0, 10)}...</code>
+                <code style={{ fontSize: 12, color: '#999' }}>{(t.d2 as any).toString().slice(0, 10)}...</code>
+                <code style={{ fontSize: 12, color: '#999' }}>{(t.d3 as any).toString().slice(0, 10)}...</code>
+                <code style={{ fontSize: 12, color: '#999' }}>{(t.d4 as any).toString().slice(0, 10)}...</code>
+                {t.clear ? (
+                  <strong style={{ marginLeft: 'auto' }}>
+                    {t.clear[0]} {t.clear[1]} {t.clear[2]} {t.clear[3]}
+                  </strong>
+                ) : (
+                  <button onClick={() => decryptTicket(t)} disabled={t.loading} style={{ marginLeft: 'auto' }}>
+                    {t.loading ? 'Decrypting...' : 'Decrypt'}
+                  </button>
+                )}
+                {t.error && <span style={{ color: 'red' }}>{t.error}</span>}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
