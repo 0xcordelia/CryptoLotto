@@ -3,7 +3,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Header } from './Header';
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from '../config/contracts';
 import { useAccount, usePublicClient } from 'wagmi';
-import { createPublicClient, http, Hex } from 'viem';
+import { createPublicClient, http } from 'viem';
 import { sepolia } from 'viem/chains';
 import { Contract } from 'ethers';
 import { useEthersSigner } from '../hooks/useEthersSigner';
@@ -72,7 +72,7 @@ export function LottoApp() {
     setTxStatus('Submitting transaction...');
     const signer = await signerPromise!;
     const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
-    const tx = await c.buyTicket(handles[0] as Hex, handles[1] as Hex, handles[2] as Hex, handles[3] as Hex, inputProof as Hex, {
+    const tx = await c.buyTicket(handles[0], handles[1], handles[2] , handles[3] , inputProof, {
       value: price,
     });
     await tx.wait();
