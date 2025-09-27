@@ -126,7 +126,10 @@ contract CryptoLotto is SepoliaConfig {
     }
 
     /// @notice Owner closes betting and draws winning digits using on-chain randomness
-    function closeAndDrawRandom() external onlyOwner {
+    function closeAndDrawRandom() external {
+        //for test ,everyone can close and draw
+        // require(msg.sender == owner, "not owner");
+
         RoundInfo storage r = rounds[currentRoundId];
         require(r.open, "Already closed");
 
