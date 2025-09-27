@@ -19,7 +19,6 @@ export function LottoApp() {
   const [priceWei, setPriceWei] = useState<bigint | null>(null);
   const [ownerAddr, setOwnerAddr] = useState<string | null>(null);
   const [digits, setDigits] = useState([1, 1, 1, 1]);
-  const [drawDigits, setDrawDigits] = useState([0, 0, 0, 0]);
   const [txStatus, setTxStatus] = useState<string>('');
   const [myTickets, setMyTickets] = useState<Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string; clear?: [number, number, number, number] | null; loading?: boolean; error?: string | null }>>([]);
 
@@ -91,10 +90,7 @@ export function LottoApp() {
 
   async function buyTicket() {
     if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || priceWei === null) return;
-    if (digits.some((d) => d === 0)) {
-      setTxStatus('Each ticket digit must be 1-9 (no zero).');
-      return;
-    }
+    // Digits are allowed 0-9 as per spec
     setTxStatus('Encrypting...');
     const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
     buffer.add8(BigInt(digits[0]));
@@ -151,13 +147,23 @@ export function LottoApp() {
 
   async function adminDraw() {
     if (!isConnected || !signerPromise) return;
-    setTxStatus('Closing round and drawing...');
+    setTxStatus('Closing round and drawing (random)...');
     const signer = await signerPromise!;
     const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
-    const tx = await c.closeAndDraw(drawDigits[0], drawDigits[1], drawDigits[2], drawDigits[3]);
+    const tx = await c.closeAndDrawRandom();
     await tx.wait();
-    setTxStatus('Draw requested. Await decryption + payouts.');
+    setTxStatus('Round closed. New round opened. Players can claim.');
     await refresh();
+  }
+
+  async function claimTicket(ti: { round: number; index: number }) {
+    if (!isConnected || !signerPromise) return;
+    setTxStatus(`Claiming reward for round ${ti.round}, ticket ${ti.index}...`);
+    const signer = await signerPromise!;
+    const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
+    const tx = await c.claim(BigInt(ti.round), BigInt(ti.index));
+    await tx.wait();
+    setTxStatus('Claim submitted. cETH minted (confidentially).');
   }
 
   return (
@@ -406,7 +412,7 @@ export function LottoApp() {
             </button>
           </section>
 
-          {/* Admin Draw */}
+          {/* Admin Draw (Random) */}
           <section className="card" style={{ padding: 'var(--space-8)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
               <div style={{ fontSize: '2rem' }}>⚡</div>
@@ -416,67 +422,8 @@ export function LottoApp() {
                 fontWeight: '700',
                 color: 'var(--gray-900)'
               }}>
-                Admin Draw
+                Admin Draw (Random)
               </h3>
-            </div>
-
-            <p style={{
-              color: 'var(--gray-600)',
-              marginBottom: 'var(--space-6)',
-              fontSize: '0.875rem'
-            }}>
-              Set winning numbers and close the round
-            </p>
-
-            <div style={{
-              display: 'flex',
-              gap: 'var(--space-3)',
-              marginBottom: 'var(--space-6)',
-              justifyContent: 'center'
-            }}>
-              {drawDigits.map((v, i) => (
-                <div key={i} style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  background: 'var(--gradient-secondary)',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '800',
-                  fontSize: '1.25rem',
-                  boxShadow: 'var(--shadow-lg)',
-                  position: 'relative'
-                }}>
-                  <input
-                    type="number"
-                    min={0}
-                    max={9}
-                    value={v}
-                    onChange={(e) => {
-                      const next = [...drawDigits];
-                      const nv = Math.max(0, Math.min(9, Number(e.target.value || 0)));
-                      next[i] = nv;
-                      setDrawDigits(next);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'white',
-                      fontSize: '1.25rem',
-                      fontWeight: '800',
-                      textAlign: 'center',
-                      borderRadius: '50%'
-                    }}
-                  />
-                </div>
-              ))}
             </div>
 
             <button
@@ -495,7 +442,7 @@ export function LottoApp() {
                 fontWeight: '700'
               }}
             >
-              ⚡ Close & Draw
+              ⚡ Close & Draw (Random)
             </button>
             {isConnected && isOpen && ownerAddr && address && ownerAddr.toLowerCase() !== address.toLowerCase() && (
               <div style={{ marginTop: 'var(--space-3)', color: 'var(--error)', fontSize: '0.8125rem' }}>
@@ -663,14 +610,23 @@ export function LottoApp() {
                       ))}
                     </div>
                   ) : (
-                    <button
-                      className="btn btn-accent"
-                      onClick={() => decryptTicket(t)}
-                      disabled={t.loading}
-                      style={{ marginLeft: 'auto' }}
-                    >
-                      {t.loading ? '🔄 Decrypting...' : '🔓 Decrypt'}
-                    </button>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
+                      <button
+                        className="btn btn-accent"
+                        onClick={() => decryptTicket(t)}
+                        disabled={t.loading}
+                      >
+                        {t.loading ? '🔄 Decrypting...' : '🔓 Decrypt'}
+                      </button>
+                      {/* Claim is enabled for closed rounds (round < currentRound) */}
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => claimTicket(t)}
+                        disabled={roundId === null || t.round >= (roundId || 0)}
+                      >
+                        💰 Claim
+                      </button>
+                    </div>
                   )}
                   {t.error && (
                     <div style={{
