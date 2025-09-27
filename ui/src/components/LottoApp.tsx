@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from '../config/contracts';
+import { CONTRACT_ABI, CONTRACT_ADDRESS, CETH_ABI, CETH_ADDRESS } from '../config/contracts';
 import { useAccount, usePublicClient } from 'wagmi';
 import { createPublicClient, http, formatEther } from 'viem';
 import { sepolia } from 'viem/chains';
@@ -22,6 +22,7 @@ export function LottoApp() {
   const [winners, setWinners] = useState<Array<{ round: number; digits: [number, number, number, number] }>>([]);
   const [txStatus, setTxStatus] = useState<string>('');
   const [myTickets, setMyTickets] = useState<Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string; clear?: [number, number, number, number] | null; loading?: boolean; error?: string | null }>>([]);
+  const [cethBalance, setCethBalance] = useState<{ handle?: string | null; clear?: string | null; decimals?: number } | null>({ handle: null, clear: null, decimals: 18 });
 
   const publicClient = useMemo(() => {
     // Ensure no localhost usage; use Sepolia RPC from the injected wagmi client
@@ -93,8 +94,30 @@ export function LottoApp() {
           }
         }
         setMyTickets(all);
+
+        // Fetch confidential cETH balance handle
+        try {
+          const [balHandle, decs] = await Promise.all([
+            publicClient.readContract({
+              abi: CETH_ABI as any,
+              address: CETH_ADDRESS as `0x${string}`,
+              functionName: 'confidentialBalanceOf',
+              args: [address as `0x${string}`],
+            }),
+            publicClient.readContract({
+              abi: CETH_ABI as any,
+              address: CETH_ADDRESS as `0x${string}`,
+              functionName: 'decimals',
+              args: [],
+            })
+          ]);
+          setCethBalance({ handle: balHandle as string, clear: null, decimals: Number(decs as number) });
+        } catch (_) {
+          setCethBalance({ handle: null, clear: null, decimals: 18 });
+        }
       } else {
         setMyTickets([]);
+        setCethBalance({ handle: null, clear: null, decimals: 18 });
       }
     } catch (e) {
       // noop
@@ -186,6 +209,38 @@ export function LottoApp() {
     const tx = await c.claim(BigInt(ti.round), BigInt(ti.index));
     await tx.wait();
     setTxStatus('Claim submitted. cETH minted (confidentially).');
+    // mark claimed locally
+    setMyTickets((prev) => prev.map((t) => (t.round === ti.round && t.index === ti.index ? { ...t, claimed: true } as any : t)) as any);
+  }
+
+  async function decryptCethBalance() {
+    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || !address || !cethBalance?.handle) return;
+    try {
+      const signer = await signerPromise!;
+      const start = Math.floor(Date.now() / 1000).toString();
+      const durationDays = '7';
+      const keypair = zama.generateKeypair();
+      const eip712 = zama.createEIP712(keypair.publicKey, [CETH_ADDRESS], start, durationDays);
+      const signature = await signer.signTypedData(
+        eip712.domain,
+        { UserDecryptRequestVerification: (eip712 as any).types.UserDecryptRequestVerification },
+        eip712.message,
+      );
+      const pairs = [ { handle: cethBalance.handle, contractAddress: CETH_ADDRESS } ];
+      const out = await zama.userDecrypt(pairs, keypair.privateKey, keypair.publicKey, signature, [CETH_ADDRESS], address, start, durationDays);
+      const raw = Number((out as any)[cethBalance.handle] ?? 0);
+      const decs = cethBalance.decimals ?? 18;
+      // format with decimals
+      const scaled = BigInt(raw);
+      const denominator = BigInt(10) ** BigInt(decs);
+      const whole = scaled / denominator;
+      const frac = scaled % denominator;
+      const fracStr = frac.toString().padStart(decs, '0').replace(/0+$/, '');
+      const formatted = fracStr.length ? `${whole.toString()}.${fracStr}` : whole.toString();
+      setCethBalance({ ...cethBalance, clear: formatted });
+    } catch (err) {
+      // ignore
+    }
   }
 
   return (
@@ -240,6 +295,17 @@ export function LottoApp() {
           </div>
         </div>
       </header>
+
+      {/* Advantages */}
+      <section className="card" style={{ maxWidth: '1200px', margin: 'var(--space-6) auto 0', padding: 'var(--space-6)' }}>
+        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--gray-900)' }}>Why CryptoLotto</h3>
+        <ul style={{ margin: 'var(--space-3) 0 0 1.25rem', color: 'var(--gray-700)', fontSize: '0.95rem' }}>
+          <li>Fully encrypted tickets on-chain with Zama FHE</li>
+          <li>On-chain random draws, round-based lifecycle</li>
+          <li>Position-specific matching and fixed cETH prizes</li>
+          <li>Confidential claiming: mint occurs even for zero prizes</li>
+        </ul>
+      </section>
 
       {/* Main Content */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'var(--space-8) var(--space-6)' }}>
@@ -438,6 +504,25 @@ export function LottoApp() {
             >
               🎲 Buy Ticket ({priceWei !== null ? `${formatEther(priceWei)} ETH` : '...'})
             </button>
+          </section>
+
+          {/* My cETH */}
+          <section className="card" style={{ padding: 'var(--space-8)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+              <div style={{ fontSize: '2rem' }}>🪙</div>
+              <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: 'var(--gray-900)' }}>My cETH</h3>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--gray-800)' }}>
+                {cethBalance?.clear ? `${cethBalance.clear} cETH` : '*** cETH'}
+              </div>
+              {!cethBalance?.clear && cethBalance?.handle && (
+                <button className="btn btn-accent" onClick={decryptCethBalance}>Decrypt</button>
+              )}
+            </div>
+
+            <div>cETH is Confidential ETH. It's wrapped from ETH. You can swap it to ETH. </div>
+            <div>Lotto reward is cETH to secure confidential. No one will know how much you earn, even the platform know nothing.</div>
           </section>
 
           {/* Admin Draw (Random) */}
@@ -649,13 +734,17 @@ export function LottoApp() {
                         {t.loading ? '🔄 Decrypting...' : '🔓 Decrypt'}
                       </button>
                       {/* Claim is enabled for closed rounds (round < currentRound) */}
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => claimTicket(t)}
-                        disabled={roundId === null || t.round >= (roundId || 0)}
-                      >
-                        💰 Claim
-                      </button>
+                      { (t as any).claimed ? (
+                        <button className="btn" disabled>Claimed</button>
+                      ) : (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => claimTicket(t)}
+                          disabled={roundId === null || t.round >= (roundId || 0)}
+                        >
+                          💰 Claim
+                        </button>
+                      )}
                     </div>
                   )}
                   {t.error && (
