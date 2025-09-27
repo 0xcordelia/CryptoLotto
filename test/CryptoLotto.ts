@@ -3,7 +3,7 @@ import { ethers, fhevm } from "hardhat";
 import { expect } from "chai";
 import { FhevmType } from "@fhevm/hardhat-plugin";
 
-import { CryptoLotto, CryptoLotto__factory } from "../types";
+import { CryptoLotto, CryptoLotto__factory, ConfidentialETH__factory } from "../types";
 
 type Signers = {
   deployer: HardhatEthersSigner;
@@ -27,8 +27,13 @@ describe("CryptoLotto", function () {
       this.skip();
     }
 
+    const ceth = await (await ethers.getContractFactory("ConfidentialETH"))
+      .connect(signers.deployer)
+      .deploy(signers.deployer.address);
+
     const factory = (await ethers.getContractFactory("CryptoLotto")) as CryptoLotto__factory;
-    lotto = (await factory.deploy()) as CryptoLotto;
+    lotto = (await factory.deploy(await ceth.getAddress())) as CryptoLotto;
+    await ceth.setLottoAddress(await lotto.getAddress());
     lottoAddress = await lotto.getAddress();
   });
 
