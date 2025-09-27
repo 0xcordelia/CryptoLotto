@@ -236,11 +236,39 @@ export function LottoApp() {
   }
 
   async function decryptCethBalance() {
-    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || !address || !cethBalance?.handle) return;
+    if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || !address) return;
+    // Always refresh latest encrypted balance/decimals from chain first
+    let latestHandle: string | null = null;
+    let latestDecimals = 18;
+    try {
+      const [balHandle, decs] = await Promise.all([
+        publicClient.readContract({
+          abi: CETH_ABI as any,
+          address: CETH_ADDRESS as `0x${string}`,
+          functionName: 'confidentialBalanceOf',
+          args: [address as `0x${string}`],
+        }),
+        publicClient.readContract({
+          abi: CETH_ABI as any,
+          address: CETH_ADDRESS as `0x${string}`,
+          functionName: 'decimals',
+          args: [],
+        }),
+      ]);
+      latestHandle = balHandle as string;
+      latestDecimals = Number(decs as number) || 18;
+      setCethBalance({ handle: latestHandle, clear: null, decimals: latestDecimals });
+    } catch (_) {
+      // fallback to existing handle if fetch fails
+      latestHandle = cethBalance?.handle ?? null;
+      latestDecimals = cethBalance?.decimals ?? 18;
+    }
+
+    if (!latestHandle) return;
     const ZERO32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
     // If handle is zero, treat as clear 0 without remote decrypt
-    if (cethBalance.handle.toLowerCase() === ZERO32) {
-      setCethBalance({ ...cethBalance, clear: '0' });
+    if (latestHandle.toLowerCase() === ZERO32) {
+      setCethBalance({ handle: latestHandle, clear: '0', decimals: latestDecimals });
       return;
     }
     try {
@@ -254,10 +282,10 @@ export function LottoApp() {
         { UserDecryptRequestVerification: (eip712 as any).types.UserDecryptRequestVerification },
         eip712.message,
       );
-      const pairs = [ { handle: cethBalance.handle, contractAddress: CETH_ADDRESS } ];
+      const pairs = [ { handle: latestHandle, contractAddress: CETH_ADDRESS } ];
       const out = await zama.userDecrypt(pairs, keypair.privateKey, keypair.publicKey, signature, [CETH_ADDRESS], address, start, durationDays);
-      const raw = Number((out as any)[cethBalance.handle] ?? 0);
-      const decs = cethBalance.decimals ?? 18;
+      const raw = Number((out as any)[latestHandle] ?? 0);
+      const decs = latestDecimals ?? 18;
       // format with decimals
       const scaled = BigInt(raw);
       const denominator = BigInt(10) ** BigInt(decs);
@@ -265,7 +293,7 @@ export function LottoApp() {
       const frac = scaled % denominator;
       const fracStr = frac.toString().padStart(decs, '0').replace(/0+$/, '');
       const formatted = fracStr.length ? `${whole.toString()}.${fracStr}` : whole.toString();
-      setCethBalance({ ...cethBalance, clear: formatted });
+      setCethBalance({ handle: latestHandle, clear: formatted, decimals: decs });
     } catch (err) {
       // ignore
     }
@@ -333,6 +361,7 @@ export function LottoApp() {
           <li>Use Confidential ETH as reward. No one know how much you win.</li>
           <li>Confidential claiming: mint occurs even for zero prizes</li>
           <li>Claim in secret. No decrypt on chain.No one know who win even us</li>
+           <li>Every one can claim a little cETH back from lotto, that makes the winner more secret.</li>
         </ul>
       </section>
 
@@ -666,6 +695,7 @@ export function LottoApp() {
             }}>
               My Tickets
             </h3>
+            <div>You can claim even your tickets is not match round result. Have change to win ETH back.</div>
           </div>
 
           {myTickets.length === 0 ? (
