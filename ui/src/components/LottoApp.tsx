@@ -219,6 +219,12 @@ export function LottoApp() {
 
   async function decryptCethBalance() {
     if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || !address || !cethBalance?.handle) return;
+    const ZERO32 = '0x0000000000000000000000000000000000000000000000000000000000000000';
+    // If handle is zero, treat as clear 0 without remote decrypt
+    if (cethBalance.handle.toLowerCase() === ZERO32) {
+      setCethBalance({ ...cethBalance, clear: '0' });
+      return;
+    }
     try {
       const signer = await signerPromise!;
       const start = Math.floor(Date.now() / 1000).toString();
@@ -540,10 +546,15 @@ export function LottoApp() {
                 fontWeight: '700',
                 color: 'var(--gray-900)'
               }}>
-                Admin Draw (Random)
+                Admin Draw
               </h3>
             </div>
-
+            <div>
+              Only Admin Can Draw. 
+            </div>
+            <div>
+              For test now, everyone can draw result.
+            </div>
             <button
               className="btn btn-secondary"
               onClick={adminDraw}
@@ -560,7 +571,7 @@ export function LottoApp() {
                 fontWeight: '700'
               }}
             >
-              ⚡ Close & Draw (Random)
+              ⚡ Draw Result & Start Next Round
             </button>
             {isConnected && isOpen && ownerAddr && address && ownerAddr.toLowerCase() !== address.toLowerCase() && (
               <div style={{ marginTop: 'var(--space-3)', color: 'var(--error)', fontSize: '0.8125rem' }}>
