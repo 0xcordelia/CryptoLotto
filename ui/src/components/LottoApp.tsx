@@ -727,7 +727,7 @@ export function LottoApp() {
             }}>
               My Tickets
             </h3>
-            <div>You can claim even your tickets is not match round result. Have change to win ETH back.</div>
+            <div>You can claim even your tickets is not match round result. Have chance to win ETH back.</div>
           </div>
 
           {myTickets.length === 0 ? (

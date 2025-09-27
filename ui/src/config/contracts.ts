@@ -1,5 +1,5 @@
 // CryptoLotto contract (Sepolia)
-export const CONTRACT_ADDRESS = '0xf0C392920a64C8a30ae37Ecdb24996314Ef4236c';
+export const CONTRACT_ADDRESS = '0xaeF70B35a564e2Faa65E62C292e65B214f3C3f0e';
 
 // ABI copied from deployments/sepolia/CryptoLotto.json
 export const CONTRACT_ABI = [
@@ -34,7 +34,7 @@ export const CONTRACT_ABI = [
 ];
 
 // ConfidentialETH (Sepolia)
-export const CETH_ADDRESS = '0x3755A611732312c3Fc46046D2cDfe2Cd610d744f';
+export const CETH_ADDRESS = '0xF73059351bdC822ad2D5cE64d8977a88EC39c7Da';
 export const CETH_ABI = [
   { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }], "name": "confidentialBalanceOf", "outputs": [{ "internalType": "euint64", "name": "", "type": "bytes32" }], "stateMutability": "view", "type": "function" },
   { "inputs": [], "name": "decimals", "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }], "stateMutability": "view", "type": "function" },
