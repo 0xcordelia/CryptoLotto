@@ -247,7 +247,8 @@ contract CryptoLotto is SepoliaConfig {
             bytes32[] memory d2,
             bytes32[] memory d3,
             bytes32[] memory d4,
-            uint256[] memory indices
+            uint256[] memory indices,
+            bool[] memory claimed
         )
     {
         RoundInfo storage r = rounds[roundId];
@@ -261,6 +262,7 @@ contract CryptoLotto is SepoliaConfig {
         d3 = new bytes32[](count);
         d4 = new bytes32[](count);
         indices = new uint256[](count);
+        claimed = new bool[](count);
         uint256 j = 0;
         for (uint256 i = 0; i < n; i++) {
             Ticket storage t = r.tickets[i];
@@ -270,6 +272,7 @@ contract CryptoLotto is SepoliaConfig {
                 d3[j] = FHE.toBytes32(t.d3);
                 d4[j] = FHE.toBytes32(t.d4);
                 indices[j] = i;
+                claimed[j] = t.claimed;
                 j++;
             }
         }
@@ -279,6 +282,13 @@ contract CryptoLotto is SepoliaConfig {
     function getWinningDigits(uint256 roundId) external view returns (uint8, uint8, uint8, uint8) {
         RoundInfo storage r = rounds[roundId];
         return (r.w1, r.w2, r.w3, r.w4);
+    }
+
+    /// @notice Returns whether a ticket was claimed
+    function isTicketClaimed(uint256 roundId, uint256 ticketIndex) external view returns (bool) {
+        RoundInfo storage r = rounds[roundId];
+        require(ticketIndex < r.tickets.length, "Bad index");
+        return r.tickets[ticketIndex].claimed;
     }
 
     /// @notice Test helper to compute and store a match count handle for decryption in mock env
