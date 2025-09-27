@@ -10,6 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     log: true,
     args: [deployer],
+    skipIfAlreadyDeployed: false,
   });
 
   // Deploy CryptoLotto with cETH address
@@ -17,6 +18,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     log: true,
     args: [deployedCeth.address],
+    skipIfAlreadyDeployed: false,
   });
 
   // Wire lotto minter in cETH

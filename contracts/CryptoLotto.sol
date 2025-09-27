@@ -131,7 +131,9 @@ contract CryptoLotto is SepoliaConfig {
         require(r.open, "Already closed");
 
         // On-chain randomness: use prevrandao and blockhash/height as entropy
-        bytes32 seed = keccak256(abi.encodePacked(block.prevrandao, blockhash(block.number - 1), address(this), currentRoundId));
+        bytes32 seed = keccak256(
+            abi.encodePacked(block.prevrandao, blockhash(block.number - 1), address(this), currentRoundId)
+        );
         uint8 w1 = uint8(uint256(seed) % 10);
         uint8 w2 = uint8(uint256(keccak256(abi.encodePacked(seed, uint256(1)))) % 10);
         uint8 w3 = uint8(uint256(keccak256(abi.encodePacked(seed, uint256(2)))) % 10);
@@ -184,7 +186,10 @@ contract CryptoLotto is SepoliaConfig {
             )
         );
 
+        // Allow ConfidentialETH to consume this ciphertext
+        FHE.allow(amount, address(ceth));
         // Always mint (possibly 0) to preserve confidentiality
+        FHE.allowTransient(amount, address(ceth));
         ceth.mint(msg.sender, amount);
         t.claimed = true;
         emit Claimed(roundId, msg.sender, ticketIndex);
