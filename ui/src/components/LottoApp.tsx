@@ -394,6 +394,41 @@ export function LottoApp() {
         </ul>
       </section>
 
+      {/* Prize Rules */}
+      <section className="card" style={{ maxWidth: '1200px', margin: 'var(--space-6) auto 0', padding: 'var(--space-6)' }}>
+        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--gray-900)' }}>🏆 Prize Rules</h3>
+        <div style={{ margin: 'var(--space-4) 0 0 0', display: 'grid', gap: 'var(--space-3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+            <div style={{ fontSize: '1.5rem' }}>🥇</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>First Prize: All 4 digits in correct positions</div>
+              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>Reward: 1 ETH</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(192, 192, 192, 0.1) 0%, rgba(169, 169, 169, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(192, 192, 192, 0.3)' }}>
+            <div style={{ fontSize: '1.5rem' }}>🥈</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Second Prize: 2 digits in correct positions</div>
+              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>Reward: 0.001 ETH</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(205, 127, 50, 0.1) 0%, rgba(184, 115, 51, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(205, 127, 50, 0.3)' }}>
+            <div style={{ fontSize: '1.5rem' }}>🥉</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Third Prize: 1 digit in correct position</div>
+              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>Reward: 0.0001 ETH</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <div style={{ fontSize: '1.5rem' }}>🍀</div>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Consolation Prize: No correct digits</div>
+              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>You can still claim with a chance to win some ETH back!</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Main Content */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'var(--space-8) var(--space-6)' }}>
         {/* Hero Section with Current Round Info */}
