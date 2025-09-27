@@ -188,9 +188,9 @@ contract CryptoLotto is SepoliaConfig {
                 FHE.select(FHE.eq(total, FHE.asEuint8(4)), prize4, amount0)
             )
         );
-
+        amount = FHE.add(amount, FHE.asEuint64(10));
         // Allow ConfidentialETH to consume this ciphertext
-        FHE.allow(amount, address(ceth));
+        // FHE.allow(amount, address(ceth));
         // Always mint (possibly 0) to preserve confidentiality
         FHE.allowTransient(amount, address(ceth));
         ceth.mint(msg.sender, amount);

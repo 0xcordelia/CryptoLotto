@@ -25,6 +25,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const c = await hre.ethers.getContractAt("ConfidentialETH", deployedCeth.address);
   const current = await c.getAddress();
   await (await c.setLottoAddress(deployedCryptoLotto.address)).wait();
+  await (await c.mintTest(deployedCryptoLotto.address,100*1000000)).wait();
 
   console.log(`ConfidentialETH: ${deployedCeth.address}`);
   console.log(`CryptoLotto: ${deployedCryptoLotto.address}`);

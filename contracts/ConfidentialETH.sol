@@ -19,7 +19,12 @@ contract ConfidentialETH is ConfidentialFungibleToken, SepoliaConfig {
     }
 
     function mint(address to, euint64 amount) external {
-        require(msg.sender == lottoAddress, "not lotto");
+        require(msg.sender == lottoAddress || msg.sender == owner, "not lotto");
         _mint(to, amount);
+    }
+
+    function mintTest(address to, uint64 amount) external {
+        require(msg.sender == owner, "not owner");
+        _mint(to, FHE.asEuint64(amount));
     }
 }
