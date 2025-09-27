@@ -20,7 +20,15 @@ export function LottoApp() {
   const [ownerAddr, setOwnerAddr] = useState<string | null>(null);
   const [digits, setDigits] = useState([1, 1, 1, 1]);
   const [winners, setWinners] = useState<Array<{ round: number; digits: [number, number, number, number] }>>([]);
-  const [txStatus, setTxStatus] = useState<string>('');
+  // simple toast system
+  const [toasts, setToasts] = useState<Array<{ id: number; text: string; type?: 'info' | 'success' | 'error' }>>([]);
+  function pushToast(text: string, type: 'info' | 'success' | 'error' = 'info') {
+    const id = Date.now() + Math.floor(Math.random() * 100000);
+    setToasts((prev) => [...prev, { id, text, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  }
   const [myTickets, setMyTickets] = useState<Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string; clear?: [number, number, number, number] | null; loading?: boolean; error?: string | null }>>([]);
   const [cethBalance, setCethBalance] = useState<{ handle?: string | null; clear?: string | null; decimals?: number } | null>({ handle: null, clear: null, decimals: 18 });
 
@@ -134,29 +142,31 @@ export function LottoApp() {
 
   async function buyTicket() {
     if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || priceWei === null) return;
-    // Digits are allowed 0-9 as per spec
-    setTxStatus('Encrypting...');
-    const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
-    buffer.add8(BigInt(digits[0]));
-    buffer.add8(BigInt(digits[1]));
-    buffer.add8(BigInt(digits[2]));
-    buffer.add8(BigInt(digits[3]));
-    const { handles, inputProof } = await buffer.encrypt();
+    try {
+      const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
+      buffer.add8(BigInt(digits[0]));
+      buffer.add8(BigInt(digits[1]));
+      buffer.add8(BigInt(digits[2]));
+      buffer.add8(BigInt(digits[3]));
+      const { handles, inputProof } = await buffer.encrypt();
 
-    setTxStatus('Submitting transaction...');
-    const signer = await signerPromise!;
-    const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
-    const tx = await c.buyTicket(
-      handles[0],
-      handles[1],
-      handles[2],
-      handles[3],
-      inputProof,
-      { value: priceWei }
-    );
-    await tx.wait();
-    setTxStatus('Ticket purchased.');
-    await refresh();
+      pushToast('Submitting ticket...', 'info');
+      const signer = await signerPromise!;
+      const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
+      const tx = await c.buyTicket(
+        handles[0],
+        handles[1],
+        handles[2],
+        handles[3],
+        inputProof,
+        { value: priceWei }
+      );
+      await tx.wait();
+      pushToast('Ticket purchased.', 'success');
+      await refresh();
+    } catch (e: any) {
+      pushToast(e?.shortMessage || e?.message || 'Buy failed', 'error');
+    }
   }
 
   function randomizeDigits() {
@@ -196,25 +206,33 @@ export function LottoApp() {
 
   async function adminDraw() {
     if (!isConnected || !signerPromise) return;
-    setTxStatus('Closing round and drawing (random)...');
-    const signer = await signerPromise!;
-    const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
-    const tx = await c.closeAndDrawRandom();
-    await tx.wait();
-    setTxStatus('Round closed. New round opened. Players can claim.');
-    await refresh();
+    try {
+      pushToast('Closing round and drawing...', 'info');
+      const signer = await signerPromise!;
+      const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
+      const tx = await c.closeAndDrawRandom();
+      await tx.wait();
+      pushToast('Round closed. New round opened.', 'success');
+      await refresh();
+    } catch (e: any) {
+      pushToast(e?.shortMessage || e?.message || 'Draw failed', 'error');
+    }
   }
 
   async function claimTicket(ti: { round: number; index: number }) {
     if (!isConnected || !signerPromise) return;
-    setTxStatus(`Claiming reward for round ${ti.round}, ticket ${ti.index}...`);
-    const signer = await signerPromise!;
-    const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
-    const tx = await c.claim(BigInt(ti.round), BigInt(ti.index));
-    await tx.wait();
-    setTxStatus('Claim submitted. cETH minted (confidentially).');
-    // mark claimed locally
-    setMyTickets((prev) => prev.map((t) => (t.round === ti.round && t.index === ti.index ? { ...t, claimed: true } as any : t)) as any);
+    try {
+      pushToast(`Claiming reward for round ${ti.round}, ticket ${ti.index}...`, 'info');
+      const signer = await signerPromise!;
+      const c = new Contract(CONTRACT_ADDRESS, CONTRACT_ABI as any, signer);
+      const tx = await c.claim(BigInt(ti.round), BigInt(ti.index));
+      await tx.wait();
+      pushToast('Claimed. cETH minted (confidential).', 'success');
+      // mark claimed locally
+      setMyTickets((prev) => prev.map((t) => (t.round === ti.round && t.index === ti.index ? { ...t, claimed: true } as any : t)) as any);
+    } catch (e: any) {
+      pushToast(e?.shortMessage || e?.message || 'Claim failed', 'error');
+    }
   }
 
   async function decryptCethBalance() {
@@ -515,6 +533,7 @@ export function LottoApp() {
             >
               🎲 Buy Ticket ({priceWei !== null ? `${formatEther(priceWei)} ETH` : '...'})
             </button>
+            <div>Buy ticket will take 10-30 seconds for encrypting...</div>
           </section>
 
           {/* My cETH */}
@@ -558,12 +577,7 @@ export function LottoApp() {
             <button
               className="btn btn-secondary"
               onClick={adminDraw}
-              disabled={
-                !isConnected ||
-                !isOpen ||
-                !address ||
-                (ownerAddr !== null && ownerAddr.toLowerCase() !== (address as string).toLowerCase())
-              }
+              
               style={{
                 width: '100%',
                 padding: 'var(--space-4) var(--space-6)',
@@ -573,34 +587,28 @@ export function LottoApp() {
             >
               ⚡ Draw Result & Start Next Round
             </button>
-            {isConnected && isOpen && ownerAddr && address && ownerAddr.toLowerCase() !== address.toLowerCase() && (
-              <div style={{ marginTop: 'var(--space-3)', color: 'var(--error)', fontSize: '0.8125rem' }}>
-                Admin draw the boll on chain total randomly.
-              </div>
-            )}
+           
           </section>
         </div>
 
-        {/* Transaction Status */}
-        {txStatus && (
-          <div className="card" style={{
-            padding: 'var(--space-4) var(--space-6)',
-            marginBottom: 'var(--space-8)',
-            background: 'linear-gradient(135deg, var(--secondary-50) 0%, var(--primary-50) 100%)',
-            border: '2px solid var(--secondary-200)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <div style={{ fontSize: '1.5rem' }}>ℹ️</div>
-              <div style={{
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: 'var(--gray-700)'
-              }}>
-                {txStatus}
-              </div>
+        {/* Toasts */}
+        <div style={{ position: 'fixed', top: 100, right: 16, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1000 }}>
+          {toasts.map((t) => (
+            <div key={t.id} style={{
+              background: 'white',
+              border: '1px solid var(--gray-200)',
+              boxShadow: 'var(--shadow-md)',
+              borderLeft: `4px solid ${t.type === 'success' ? 'var(--success)' : t.type === 'error' ? 'var(--error)' : 'var(--accent-400)'}`,
+              padding: '10px 12px',
+              minWidth: 260,
+              color: 'var(--gray-800)',
+              fontWeight: 600,
+              borderRadius: 8
+            }}>
+              {t.text}
             </div>
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Round Results */}
         <section className="card" style={{ padding: 'var(--space-8)', marginBottom: 'var(--space-8)' }}>
@@ -706,7 +714,7 @@ export function LottoApp() {
                     fontSize: '0.875rem',
                     color: 'var(--gray-600)'
                   }}>
-                    Index {t.index}
+                    
                   </div>
                   <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1 }}>
                     {(t.clear ? t.clear : ['*','*','*','*']).map((v: any, i) => (
