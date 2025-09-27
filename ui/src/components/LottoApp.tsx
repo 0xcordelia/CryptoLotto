@@ -88,9 +88,13 @@ export function LottoApp() {
             functionName: 'getUserTickets',
             args: [BigInt(r), address as `0x${string}`],
           });
-          const [a, b, c, d, idxs] = res as any[];
+          const arr = res as any[];
+          const a = arr[0]; const b = arr[1]; const c = arr[2]; const d = arr[3]; const idxs = arr[4];
+          const claimedArr = arr[5];
           for (let i = 0; i < (a?.length || 0); i++) {
-            all.push({ round: r, index: Number(idxs[i]), d1: a[i], d2: b[i], d3: c[i], d4: d[i] });
+            const round = r; const index = Number(idxs[i]);
+            const claimed = Array.isArray(claimedArr) ? Boolean(claimedArr[i]) : false;
+            all.push({ round, index, d1: a[i], d2: b[i], d3: c[i], d4: d[i], ...(claimed ? { claimed: true } : {}) } as any);
           }
         }
         setMyTickets(all);
@@ -302,8 +306,9 @@ export function LottoApp() {
         <ul style={{ margin: 'var(--space-3) 0 0 1.25rem', color: 'var(--gray-700)', fontSize: '0.95rem' }}>
           <li>Fully encrypted tickets on-chain with Zama FHE</li>
           <li>On-chain random draws, round-based lifecycle</li>
-          <li>Position-specific matching and fixed cETH prizes</li>
+          <li>Use Confidential ETH as reward. No one know how much you win.</li>
           <li>Confidential claiming: mint occurs even for zero prizes</li>
+          <li>Claim in secret. No decrypt on chain.No one know who win even us</li>
         </ul>
       </section>
 
@@ -716,13 +721,17 @@ export function LottoApp() {
                   </div>
                   {t.clear ? (
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => claimTicket(t)}
-                        disabled={roundId === null || t.round >= (roundId || 0)}
-                      >
-                        💰 Claim
-                      </button>
+                      {(t as any).claimed ? (
+                        <button className="btn" disabled>Claimed</button>
+                      ) : (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => claimTicket(t)}
+                          disabled={roundId === null || t.round >= (roundId || 0)}
+                        >
+                          💰 Claim
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
