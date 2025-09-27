@@ -630,31 +630,14 @@ export function LottoApp() {
                     ))}
                   </div>
                   {t.clear ? (
-                    <div style={{
-                      display: 'flex',
-                      gap: 'var(--space-2)',
-                      marginLeft: 'auto'
-                    }}>
-                      {t.clear.map((num, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: 'var(--gradient-accent)',
-                            color: 'var(--gray-800)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: '800',
-                            fontSize: '0.875rem',
-                            boxShadow: 'var(--shadow-md)'
-                          }}
-                        >
-                          {num}
-                        </div>
-                      ))}
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => claimTicket(t)}
+                        disabled={roundId === null || t.round >= (roundId || 0)}
+                      >
+                        💰 Claim
+                      </button>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', gap: 'var(--space-2)', marginLeft: 'auto' }}>
