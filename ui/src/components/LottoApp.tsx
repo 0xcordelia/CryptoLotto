@@ -19,6 +19,7 @@ export function LottoApp() {
   const [priceWei, setPriceWei] = useState<bigint | null>(null);
   const [ownerAddr, setOwnerAddr] = useState<string | null>(null);
   const [digits, setDigits] = useState([1, 1, 1, 1]);
+  const [winners, setWinners] = useState<Array<{ round: number; digits: [number, number, number, number] }>>([]);
   const [txStatus, setTxStatus] = useState<string>('');
   const [myTickets, setMyTickets] = useState<Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string; clear?: [number, number, number, number] | null; loading?: boolean; error?: string | null }>>([]);
 
@@ -60,6 +61,22 @@ export function LottoApp() {
       setIsOpen(Boolean(open));
       setPriceWei(p as bigint);
       setOwnerAddr((own as string) ?? null);
+      // Load past winners (rounds 1..rid-1)
+      const rnum = Number(rid);
+      const wins: Array<{ round: number; digits: [number, number, number, number] }> = [];
+      for (let r = 1; r < rnum; r++) {
+        try {
+          const res = await publicClient.readContract({
+            abi: CONTRACT_ABI as any,
+            address: CONTRACT_ADDRESS as `0x${string}`,
+            functionName: 'getWinningDigits',
+            args: [BigInt(r)],
+          });
+          const arr = res as unknown as [bigint, bigint, bigint, bigint];
+          wins.push({ round: r, digits: [Number(arr[0]), Number(arr[1]), Number(arr[2]), Number(arr[3])] });
+        } catch (_) {}
+      }
+      setWinners(wins.reverse()); // latest first
       if (address) {
         // Fetch user's tickets across all rounds [1..rid]
         const all: Array<{ round: number; index: number; d1: string; d2: string; d3: string; d4: string }> = [];
@@ -113,6 +130,11 @@ export function LottoApp() {
     await tx.wait();
     setTxStatus('Ticket purchased.');
     await refresh();
+  }
+
+  function randomizeDigits() {
+    const rnd = () => Math.floor(Math.random() * 10);
+    setDigits([rnd(), rnd(), rnd(), rnd()]);
   }
 
   async function decryptTicket(ti: { round: number; index: number; d1: string; d2: string; d3: string; d4: string }) {
@@ -397,6 +419,12 @@ export function LottoApp() {
               ))}
             </div>
 
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+              <button className="btn btn-secondary" onClick={randomizeDigits}>
+                🎲 Random
+              </button>
+            </div>
+
             <button
               className={`btn btn-primary ${!isConnected || !isOpen || priceWei === null ? '' : 'sparkle'}`}
               onClick={buyTicket}
@@ -446,7 +474,7 @@ export function LottoApp() {
             </button>
             {isConnected && isOpen && ownerAddr && address && ownerAddr.toLowerCase() !== address.toLowerCase() && (
               <div style={{ marginTop: 'var(--space-3)', color: 'var(--error)', fontSize: '0.8125rem' }}>
-                Only the contract owner can close the round.
+                Admin draw the boll on chain total randomly.
               </div>
             )}
           </section>
@@ -473,7 +501,7 @@ export function LottoApp() {
           </div>
         )}
 
-        {/* Recent Winners */}
+        {/* Round Results */}
         <section className="card" style={{ padding: 'var(--space-8)', marginBottom: 'var(--space-8)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
             <div style={{ fontSize: '2rem' }}>🏆</div>
@@ -483,25 +511,38 @@ export function LottoApp() {
               fontWeight: '700',
               color: 'var(--gray-900)'
             }}>
-              Recent Winners
+              Round Results
             </h3>
           </div>
-          <div style={{
-            padding: 'var(--space-6)',
-            background: 'var(--gray-50)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px dashed var(--gray-300)',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>🔍</div>
-            <p style={{
-              color: 'var(--gray-600)',
-              margin: 0,
-              fontSize: '0.875rem'
+          {winners.length === 0 ? (
+            <div style={{
+              padding: 'var(--space-6)',
+              background: 'var(--gray-50)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px dashed var(--gray-300)',
+              textAlign: 'center'
             }}>
-              Use a block explorer or subscribe to PrizeAwarded events to display winners.
-            </p>
-          </div>
+              <div style={{ fontSize: '3rem', marginBottom: 'var(--space-3)' }}>🗓️</div>
+              <p style={{ color: 'var(--gray-600)', margin: 0, fontSize: '0.875rem' }}>
+                No past round results yet.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
+              {winners.map((w) => (
+                <div key={w.round} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--gray-50)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-200)' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--gray-700)' }}>Round #{w.round}</div>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    {w.digits.map((num, i) => (
+                      <div key={i} style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--gradient-secondary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                        {num}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* My Tickets */}
@@ -567,19 +608,25 @@ export function LottoApp() {
                     Index {t.index}
                   </div>
                   <div style={{ display: 'flex', gap: 'var(--space-2)', flex: 1 }}>
-                    {[t.d1, t.d2, t.d3, t.d4].map((d, i) => (
-                      <code
+                    {(t.clear ? t.clear : ['*','*','*','*']).map((v: any, i) => (
+                      <div
                         key={i}
                         style={{
-                          fontSize: '0.75rem',
-                          color: 'var(--gray-500)',
-                          background: 'var(--gray-100)',
-                          padding: 'var(--space-1) var(--space-2)',
-                          borderRadius: 'var(--radius-sm)'
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '50%',
+                          background: t.clear ? 'var(--gradient-accent)' : 'var(--gray-200)',
+                          color: t.clear ? 'var(--gray-800)' : 'var(--gray-600)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: '800',
+                          fontSize: '0.875rem',
+                          boxShadow: 'var(--shadow-md)'
                         }}
                       >
-                        {(d as any).toString().slice(0, 8)}...
-                      </code>
+                        {t.clear ? v : '***'}
+                      </div>
                     ))}
                   </div>
                   {t.clear ? (
