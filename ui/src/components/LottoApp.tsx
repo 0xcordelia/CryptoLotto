@@ -142,6 +142,11 @@ export function LottoApp() {
 
   async function buyTicket() {
     if (!isConnected || !signerPromise || !zama || zamaLoading || zamaError || priceWei === null) return;
+    // Enforce 1..9 per digit client-side
+    if (digits.some((d) => d < 1 || d > 9)) {
+      pushToast('Each digit must be between 1 and 9', 'error');
+      return;
+    }
     try {
       const buffer = zama.createEncryptedInput(CONTRACT_ADDRESS, address!);
       buffer.add8(BigInt(digits[0]));
@@ -170,7 +175,7 @@ export function LottoApp() {
   }
 
   function randomizeDigits() {
-    const rnd = () => Math.floor(Math.random() * 10);
+    const rnd = () => Math.floor(Math.random() * 9) + 1; // 1..9
     setDigits([rnd(), rnd(), rnd(), rnd()]);
   }
 
@@ -299,6 +304,30 @@ export function LottoApp() {
     }
   }
 
+  async function refreshCethBalance() {
+    if (!isConnected || !address) return;
+    try {
+      const [balHandle, decs] = await Promise.all([
+        publicClient.readContract({
+          abi: CETH_ABI as any,
+          address: CETH_ADDRESS as `0x${string}`,
+          functionName: 'confidentialBalanceOf',
+          args: [address as `0x${string}`],
+        }),
+        publicClient.readContract({
+          abi: CETH_ABI as any,
+          address: CETH_ADDRESS as `0x${string}`,
+          functionName: 'decimals',
+          args: [],
+        }),
+      ]);
+      setCethBalance({ handle: balHandle as string, clear: null, decimals: Number(decs as number) || 18 });
+      pushToast('cETH balance refreshed', 'success');
+    } catch (e: any) {
+      pushToast(e?.shortMessage || e?.message || 'Refresh failed', 'error');
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, var(--gray-50) 0%, var(--primary-50) 100%)' }}>
       {/* Header */}
@@ -343,7 +372,7 @@ export function LottoApp() {
                   color: 'var(--gray-600)',
                   fontWeight: '500'
                 }}>
-                  Decentralized Lottery on Blockchain
+                  Confidential Lottery Powered By Zama
                 </p>
               </div>
             </div>
@@ -575,9 +604,12 @@ export function LottoApp() {
               <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--gray-800)' }}>
                 {cethBalance?.clear ? `${cethBalance.clear} cETH` : '*** cETH'}
               </div>
-              {!cethBalance?.clear && cethBalance?.handle && (
-                <button className="btn btn-accent" onClick={decryptCethBalance}>Decrypt</button>
-              )}
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn" onClick={refreshCethBalance}>Refresh</button>
+                {!cethBalance?.clear && cethBalance?.handle && (
+                  <button className="btn btn-accent" onClick={decryptCethBalance}>Decrypt</button>
+                )}
+              </div>
             </div>
 
             <div>cETH is Confidential ETH. It's wrapped from ETH. You can swap it to ETH. </div>
