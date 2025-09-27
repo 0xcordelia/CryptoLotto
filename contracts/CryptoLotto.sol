@@ -43,9 +43,9 @@ contract CryptoLotto is SepoliaConfig {
     address public immutable owner;
     uint256 public constant TICKET_PRICE = 0.0001 ether;
     // Prizes in cETH (encrypted token) smallest unit. Using 18 decimals like wei equivalents.
-    uint64 public constant PRIZE_1_MATCH_CETH = 1e14; // 0.0001 cETH
-    uint64 public constant PRIZE_2_MATCH_CETH = 1e15; // 0.001 cETH
-    uint64 public constant PRIZE_4_MATCH_CETH = 1e18; // 1.0 cETH
+    uint64 public constant PRIZE_1_MATCH_CETH = 1e2; // 0.0001 cETH
+    uint64 public constant PRIZE_2_MATCH_CETH = 1e3; // 0.001 cETH
+    uint64 public constant PRIZE_4_MATCH_CETH = 1e6; // 1.0 cETH
 
     uint256 public currentRoundId;
     mapping(uint256 => RoundInfo) private rounds;
