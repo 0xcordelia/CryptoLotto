@@ -6,7 +6,7 @@ import {SepoliaConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 import {ConfidentialETH} from "./ConfidentialETH.sol";
 
 /// @title CryptoLotto - 4-digit encrypted lottery using Zama FHEVM
-/// @notice Players buy a ticket of 4 digits (0-9), fully encrypted on-chain. Owner can close betting, draw with
+/// @notice Players buy a ticket of 4 digits (1-9), fully encrypted on-chain. Owner can close betting, draw with
 ///         plaintext winning digits, trigger decryption of match counts, and distribute fixed prizes accordingly.
 contract CryptoLotto is SepoliaConfig {
     // Test helper: last computed match count
@@ -86,7 +86,7 @@ contract CryptoLotto is SepoliaConfig {
         return rounds[roundId].tickets.length;
     }
 
-    /// @notice Buy one ticket for current round using encrypted digits (0-9)
+    /// @notice Buy one ticket for current round using encrypted digits (1-9)
     /// @param a first digit (encrypted handle)
     /// @param b second digit (encrypted handle)
     /// @param c third digit (encrypted handle)
@@ -137,10 +137,10 @@ contract CryptoLotto is SepoliaConfig {
         bytes32 seed = keccak256(
             abi.encodePacked(block.prevrandao, blockhash(block.number - 1), address(this), currentRoundId)
         );
-        uint8 w1 = uint8(uint256(seed) % 10);
-        uint8 w2 = uint8(uint256(keccak256(abi.encodePacked(seed, uint256(1)))) % 10);
-        uint8 w3 = uint8(uint256(keccak256(abi.encodePacked(seed, uint256(2)))) % 10);
-        uint8 w4 = uint8(uint256(keccak256(abi.encodePacked(seed, uint256(3)))) % 10);
+        uint8 w1 = uint8((uint256(seed) % 9) + 1);
+        uint8 w2 = uint8((uint256(keccak256(abi.encodePacked(seed, uint256(1)))) % 9) + 1);
+        uint8 w3 = uint8((uint256(keccak256(abi.encodePacked(seed, uint256(2)))) % 9) + 1);
+        uint8 w4 = uint8((uint256(keccak256(abi.encodePacked(seed, uint256(3)))) % 9) + 1);
 
         r.open = false;
         r.w1 = w1;
