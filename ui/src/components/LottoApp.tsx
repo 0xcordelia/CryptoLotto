@@ -394,40 +394,6 @@ export function LottoApp() {
         </ul>
       </section>
 
-      {/* Prize Rules */}
-      <section className="card" style={{ maxWidth: '1200px', margin: 'var(--space-6) auto 0', padding: 'var(--space-6)' }}>
-        <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--gray-900)' }}>🏆 Prize Rules</h3>
-        <div style={{ margin: 'var(--space-4) 0 0 0', display: 'grid', gap: 'var(--space-3)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-            <div style={{ fontSize: '1.5rem' }}>🥇</div>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>First Prize: All 4 digits in correct positions</div>
-              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>Reward: 1 ETH</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(192, 192, 192, 0.1) 0%, rgba(169, 169, 169, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(192, 192, 192, 0.3)' }}>
-            <div style={{ fontSize: '1.5rem' }}>🥈</div>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Second Prize: 2 digits in correct positions</div>
-              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>Reward: 0.001 ETH</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(205, 127, 50, 0.1) 0%, rgba(184, 115, 51, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(205, 127, 50, 0.3)' }}>
-            <div style={{ fontSize: '1.5rem' }}>🥉</div>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Third Prize: 1 digit in correct position</div>
-              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>Reward: 0.0001 ETH</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <div style={{ fontSize: '1.5rem' }}>🍀</div>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--gray-900)' }}>Consolation Prize: No correct digits</div>
-              <div style={{ color: 'var(--gray-600)', fontSize: '0.875rem' }}>You can still claim with a chance to win some ETH back!</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Main Content */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'var(--space-8) var(--space-6)' }}>
@@ -537,7 +503,7 @@ export function LottoApp() {
           </div>
         </section>
 
-        {/* Game Actions */}
+        {/* Game Actions - Row 1 */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))',
@@ -629,6 +595,60 @@ export function LottoApp() {
             <div>Buy ticket will take 10-30 seconds for encrypting...</div>
           </section>
 
+          {/* Prize Rules */}
+          <section className="card" style={{ padding: 'var(--space-8)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
+              <div style={{ fontSize: '2rem' }}>🏆</div>
+              <h3 style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: 'var(--gray-900)'
+              }}>
+                Prize Rules
+              </h3>
+            </div>
+
+            <div style={{ display: 'grid', gap: 'var(--space-4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
+                <div style={{ fontSize: '1.5rem' }}>🥇</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '0.9rem' }}>First Prize: All 4 digits correct</div>
+                  <div style={{ color: 'var(--gray-600)', fontSize: '0.8rem' }}>Reward: 1 ETH</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(192, 192, 192, 0.1) 0%, rgba(169, 169, 169, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(192, 192, 192, 0.3)' }}>
+                <div style={{ fontSize: '1.5rem' }}>🥈</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '0.9rem' }}>Second Prize: 2 digits correct</div>
+                  <div style={{ color: 'var(--gray-600)', fontSize: '0.8rem' }}>Reward: 0.001 ETH</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(205, 127, 50, 0.1) 0%, rgba(184, 115, 51, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(205, 127, 50, 0.3)' }}>
+                <div style={{ fontSize: '1.5rem' }}>🥉</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '0.9rem' }}>Third Prize: 1 digit correct</div>
+                  <div style={{ color: 'var(--gray-600)', fontSize: '0.8rem' }}>Reward: 0.0001 ETH</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-3)', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                <div style={{ fontSize: '1.5rem' }}>🍀</div>
+                <div>
+                  <div style={{ fontWeight: 700, color: 'var(--gray-900)', fontSize: '0.9rem' }}>Consolation: No correct digits</div>
+                  <div style={{ color: 'var(--gray-600)', fontSize: '0.8rem' }}>Still chance to win ETH back!</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Game Actions - Row 2 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))',
+          gap: 'var(--space-8)',
+          marginBottom: 'var(--space-8)'
+        }}>
           {/* My cETH */}
           <section className="card" style={{ padding: 'var(--space-8)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-6)' }}>
@@ -665,7 +685,7 @@ export function LottoApp() {
               </h3>
             </div>
             <div>
-              Only Admin Can Draw. 
+              Only Admin Can Draw.
             </div>
             <div>
               For test now, everyone can draw result.
@@ -673,7 +693,7 @@ export function LottoApp() {
             <button
               className="btn btn-secondary"
               onClick={adminDraw}
-              
+
               style={{
                 width: '100%',
                 padding: 'var(--space-4) var(--space-6)',
@@ -683,7 +703,7 @@ export function LottoApp() {
             >
               ⚡ Draw Result & Start Next Round
             </button>
-           
+
           </section>
         </div>
 
