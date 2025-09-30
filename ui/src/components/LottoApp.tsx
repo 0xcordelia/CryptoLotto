@@ -17,7 +17,7 @@ export function LottoApp() {
   const [roundId, setRoundId] = useState<number | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [priceWei, setPriceWei] = useState<bigint | null>(null);
-  const [ownerAddr, setOwnerAddr] = useState<string | null>(null);
+  // const [ownerAddr, setOwnerAddr] = useState<string | null>(null);
   const [digits, setDigits] = useState([1, 1, 1, 1]);
   const [winners, setWinners] = useState<Array<{ round: number; digits: [number, number, number, number] }>>([]);
   // simple toast system
@@ -40,7 +40,7 @@ export function LottoApp() {
 
   async function refresh() {
     try {
-      const [rid, open, p, own] = await Promise.all([
+      const [rid, open, p, _] = await Promise.all([
         publicClient.readContract({
           abi: CONTRACT_ABI as any,
           address: CONTRACT_ADDRESS as `0x${string}`,
@@ -69,7 +69,7 @@ export function LottoApp() {
       setRoundId(Number(rid));
       setIsOpen(Boolean(open));
       setPriceWei(p as bigint);
-      setOwnerAddr((own as string) ?? null);
+      // setOwnerAddr((own as string) ?? null);
       // Load past winners (rounds 1..rid-1)
       const rnum = Number(rid);
       const wins: Array<{ round: number; digits: [number, number, number, number] }> = [];
